@@ -33,7 +33,7 @@ class CurriculumManagerConfig:
         self.stage2 = {  # 厨房导航
             "name": "厨房导航",
             "env_class": "G1KitchenNavigation",
-            "num_envs": 128,  # 较小规模并行
+            "num_envs": 64,  # 较小规模并行
             "use_fixed_kitchen": True  # 使用固定厨房布局
         }
 
