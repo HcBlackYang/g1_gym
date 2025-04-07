@@ -212,30 +212,6 @@ class ModelTransfer:
              print(f"❌ ModelTransfer ERROR: Failed to save checkpoint to {filename}: {e}")
              return None
 
-    # def load_checkpoint(self, filename):
-    #     """加载策略检查点，返回 state_dict 和相关信息"""
-    #     if not os.path.exists(filename):
-    #         print(f"❌ ModelTransfer ERROR: Checkpoint file not found: {filename}")
-    #         return None, None, None, None
-    #
-    #     try:
-    #         checkpoint = torch.load(filename, map_location=self.device)
-    #
-    #         # 提取信息
-    #         policy_state_dict = checkpoint["policy_state_dict"]
-    #         env_config_dims = checkpoint["env_config_dims"] # Load dimensions dict
-    #         total_env_steps = checkpoint["total_env_steps"]
-    #         curr_stage_tuple = checkpoint["curriculum_stage"]
-    #
-    #         # print(f"  ModelTransfer: Checkpoint loaded from {filename}")
-    #         # print(f"    - Stage: {curr_stage_tuple}, Steps: {total_env_steps}")
-    #         # print(f"    - Dims: Obs={env_config_dims['num_observations']}, PrivObs={env_config_dims['num_privileged_obs']}, Act={env_config_dims['num_actions']}")
-    #
-    #         return policy_state_dict, env_config_dims, total_env_steps, curr_stage_tuple
-    #
-    #     except Exception as e:
-    #         print(f"❌ ModelTransfer ERROR: Failed to load checkpoint from {filename}: {e}")
-    #         return None, None, None, None
 
     # 将这些修改添加到model_transfer.py的load_checkpoint方法中
     def load_checkpoint(self, checkpoint_path):

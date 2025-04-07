@@ -206,7 +206,7 @@ class G1KitchenNavigation(G1CurriculumBase):
         kitchen_base_offset = torch.tensor([2.3, 4.7, -0.002], device=self.device)
 
         # 环境间距放大因子（从kitchen_env.py借鉴）
-        spacing_factor = 5.0
+        spacing_factor = 10.0
 
         # 为每个环境添加厨房Actor
         total_added = 0
@@ -304,10 +304,21 @@ class G1KitchenNavigation(G1CurriculumBase):
         print("--- _create_envs (G1KitchenNavigation) ---")
         self.create_envs_called = True
 
+
         # --- 确保厨房资产已加载 ---
         if not self.kitchen_assets:
             print("  厨房资产尚未加载，先加载厨房资产...")
             self._load_kitchen_assets()
+
+        # --- 设置更大的环境间距 ---
+        original_spacing = self.cfg.env.env_spacing
+        # 设置更大的环境间距
+        kitchen_spacing = getattr(self.cfg.env, 'kitchen_env_spacing', 10.0)
+        self.cfg.env.env_spacing = kitchen_spacing
+        print(f"  增加环境间距从 {original_spacing} 到 {kitchen_spacing}")
+
+        # 重新计算环境原点
+        self._get_env_origins()
 
         # --- 1. 加载机器人资源 (与父类 LeggedRobot 一致) ---
         # Define G1_ROOT_DIR locally if needed

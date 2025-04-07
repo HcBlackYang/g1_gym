@@ -37,7 +37,7 @@ class Stage2KitchenNavConfig(LeggedRobotCfg):
         self.domain_rand.max_push_vel_xy = 0.5 # 显著降低推动速度
 
         # --- 初始状态配置 ---
-        self.init_state.pos = [0.0, 0.0, 0.8] # 可根据 Kitchen 布局调整
+        self.init_state.pos = [2.0, 2.0, 0.8] # 可根据 Kitchen 布局调整
         # 关节角度: 可以使用 Stage 1 的，或者调整手臂姿态
         self.init_state.default_joint_angles = {
             # 腿部（共 12 个关节）- 与 Stage 1 保持一致
