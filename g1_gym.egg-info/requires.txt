@@ -1,0 +1,9 @@
+numpy
+torch
+tensorboard
+matplotlib
+pyyaml
+tqdm
+gym
+termcolor
+scipy

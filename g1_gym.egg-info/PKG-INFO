@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: g1_gym
+Version: 1.0.0
+Summary: Reinforcement Learning environments for G1 Robot
+Author: Blake Yang
+License: BSD-3-Clause
+Requires-Python: >=3.8
+Requires-Dist: numpy
+Requires-Dist: torch
+Requires-Dist: tensorboard
+Requires-Dist: matplotlib
+Requires-Dist: pyyaml
+Requires-Dist: tqdm
+Requires-Dist: gym
+Requires-Dist: termcolor
+Requires-Dist: scipy

@@ -1,0 +1,16 @@
+current_stage: 2
+current_sub_stage: 1
+last_eval_step: 0
+latest_model_path: null
+save_timestamp: '2025-04-02 16:26:15'
+stage_history:
+- average_reward_at_transition: 0.0
+  forced_transition: true
+  model_checkpoint: null
+  new_stage: '2.1'
+  old_stage: '1.1'
+  steps_in_stage: 0
+  success_rate_at_transition: 0.0
+  timestamp: '2025-04-02 16:26:10'
+  total_env_steps: 983040
+total_env_steps_at_save: 983040
