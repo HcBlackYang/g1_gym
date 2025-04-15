@@ -25,9 +25,9 @@ class CurriculumManagerConfig:
         self.stage1 = {  # 基础运动技能
             "name": "基础运动技能",
             "env_class": "G1BasicLocomotion",
-            "num_envs": 4096,  # 大规模并行
-            "base_lin_vel_range": 2.0,  # 线速度命令范围
-            "base_ang_vel_range": 1.0  # 角速度命令范围
+            # "num_envs": 16384,  # 大规模并行
+            # "base_lin_vel_range": 2.0,  # 线速度命令范围
+            # "base_ang_vel_range": 1.0  # 角速度命令范围
         }
 
         self.stage2 = {  # 厨房导航

@@ -3,7 +3,7 @@ from numpy.random import choice
 from scipy import interpolate
 
 from isaacgym import terrain_utils
-from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
+from g1.envs.base.legged_robot_config import LeggedRobotCfg
 
 class Terrain:
     def __init__(self, cfg: LeggedRobotCfg.terrain, num_robots) -> None:

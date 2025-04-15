@@ -114,7 +114,7 @@ class Stage1LocomotionConfig(LeggedRobotCfg):
         self.control.decimation = 4
 
         # --- 资产配置 ---
-        self.asset.file = '/home/blake/g1_gym/resources/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf'
+        self.asset.file = '/root/autodl-tmp/g1/g1_gym/resources/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf'
         self.asset.name = "g1"
         # 这里假设足部接触体名称采用 URDF 中的 link 名称（请根据实际情况确认）
         self.asset.foot_name = "ankle_roll"
@@ -155,10 +155,13 @@ class Stage1LocomotionConfigPPO(LeggedRobotCfgPPO):
         init_noise_std = 0.8
         actor_hidden_dims = [32]
         critic_hidden_dims = [32]
+        # actor_hidden_dims = [256, 128]
+        # critic_hidden_dims = [256, 128]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         # only for 'ActorCriticRecurrent':
         rnn_type = 'lstm'
-        rnn_hidden_size = 64
+        # rnn_hidden_size = 64
+        rnn_hidden_size = 256  
         rnn_num_layers = 1
 
     class algorithm(LeggedRobotCfgPPO.algorithm):
@@ -166,6 +169,7 @@ class Stage1LocomotionConfigPPO(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         policy_class_name = "ActorCriticRecurrent"
+        # policy_class_name = "ActorCritic"
         max_iterations = 10000
         run_name = ''
         experiment_name = 'g1'

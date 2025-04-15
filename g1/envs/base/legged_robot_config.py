@@ -2,7 +2,7 @@ from g1.envs.base.base_config import BaseConfig
 
 class LeggedRobotCfg(BaseConfig):
     class env:
-        num_envs = 4096
+        num_envs = 16384
         num_observations = 48
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
         num_actions = 12
@@ -194,7 +194,8 @@ class LeggedRobotCfgPPO(BaseConfig):
         clip_param = 0.2
         entropy_coef = 0.01
         num_learning_epochs = 5
-        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
+        # num_learning_epochs = 10
+        num_mini_batches = 2 # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 1.e-3 #5.e-4
         schedule = 'adaptive' # could be adaptive, fixed
         gamma = 0.99
@@ -206,6 +207,7 @@ class LeggedRobotCfgPPO(BaseConfig):
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration
+        # num_steps_per_env = 128 # per iteration
         max_iterations = 1500 # number of policy updates
 
         # logging

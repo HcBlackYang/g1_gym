@@ -130,8 +130,8 @@ class G1KitchenNavigation(G1CurriculumBase):
     def _load_kitchen_assets(self):
         """加载所有Kitchen资产，在创建环境之前"""
         print("🔍 开始加载Kitchen资产...")
-        asset_root = "/home/blake/kitchen-worlds/assets/models/"
-        lisdf_path = "/home/blake/kitchen-worlds/assets/scenes/kitchen_basics.lisdf"
+        asset_root = "/root/autodl-tmp/g1/kitchen-worlds/assets/models/"
+        lisdf_path = "/root/autodl-tmp/g1/kitchen-worlds/assets/scenes/kitchen_basics.lisdf"
         pose_data = parse_lisdf(lisdf_path)
 
         # 加载所有URDF资产
