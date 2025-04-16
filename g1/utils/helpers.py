@@ -7,6 +7,47 @@ import numpy as np
 import random
 from isaacgym import gymutil
 
+
+
+# --- DotDict Class (在此处添加) ---
+class DotDict(dict):
+    """
+    一个支持点访问的字典类，方便访问嵌套配置。
+    例如: cfg.env.num_envs
+    """
+    def __init__(self, *args, **kwargs):
+        super(DotDict, self).__init__(*args, **kwargs)
+        for arg in args:
+            if isinstance(arg, dict):
+                for k, v in arg.items():
+                    # 递归转换嵌套字典
+                    self[k] = DotDict(v) if isinstance(v, dict) else v
+        if kwargs:
+            for k, v in kwargs.items():
+                self[k] = DotDict(v) if isinstance(v, dict) else v
+
+    def __getattr__(self, attr):
+        # 支持点访问
+        value = self.get(attr)
+        # 如果值仍然是字典，也将其转换为 DotDict 以支持链式访问
+        # 但只在访问时转换，避免不必要的递归
+        # return DotDict(value) if isinstance(value, dict) else value
+        # 修复: 直接返回值，让调用者决定是否需要转换
+        return value
+
+    def __setattr__(self, key, value):
+        # 支持点赋值
+        self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        # 如果赋的值是字典，递归转换为 DotDict
+        super(DotDict, self).__setitem__(key, DotDict(value) if isinstance(value, dict) else value)
+
+    def __deepcopy__(self, memo):
+        # 支持深拷贝
+        return DotDict(copy.deepcopy(dict(self), memo=memo))
+
+
 # from g1 import G1_ROOT_DIR
 
 def class_to_dict(obj) -> dict:
