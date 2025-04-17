@@ -261,7 +261,7 @@ class Stage1LocomotionConfig(LeggedRobotCfg):
         self.control.decimation = 4
 
         # --- 资产配置 ---
-        self.asset.file = '/home/blake/g1_gym/resources/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf'
+        self.asset.file = '/root/autodl-tmp/g1/g1_gym/resources/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf'
         self.asset.name = "g1"
         self.asset.foot_name = "ankle_roll" # 确认 URDF 中的足部 link 名称
         self.asset.penalize_contacts_on = ["hip", "knee", "shoulder", "elbow", "waist"]
@@ -417,9 +417,9 @@ class Stage1LocomotionConfigPPO(LeggedRobotCfgPPO):
         # 必须使用 Recurrent 版本，因为 policy 中定义了 RNN
         policy_class_name = "ActorCriticRecurrent"
         # 迭代次数和 env 步数可以根据需要调整
-        # num_steps_per_env = 24 # 每轮迭代每个 env 跑的步数
+        num_steps_per_env = 24 # 每轮迭代每个 env 跑的步数
         # max_iterations = 15000 # 总迭代次数
-        num_steps_per_env = 48 # 增加 rollout 长度可能有助于学习长期依赖
+        # num_steps_per_env = 48 # 增加 rollout 长度可能有助于学习长期依赖
         max_iterations = 20000 # 可能需要更多迭代次数
 
         run_name = 'nested_loco' # 方便区分

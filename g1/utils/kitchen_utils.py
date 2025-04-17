@@ -29,7 +29,7 @@ def parse_lisdf(lisdf_path):
 
                     # 处理相对路径和绝对路径
                     if not urdf_rel_path.startswith("/"):
-                        base_dir = "/home/blake/kitchen-worlds/assets/models/"
+                        base_dir = "/root/autodl-tmp/g1/kitchen-worlds/assets/models/"
                         urdf_abs_path = clean_path(os.path.join(base_dir, urdf_rel_path))
                     else:
                         urdf_abs_path = clean_path(urdf_rel_path)

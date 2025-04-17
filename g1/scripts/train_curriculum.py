@@ -2076,6 +2076,7 @@ def train_curriculum(args):
             while runner.current_learning_iteration < max_iterations and total_env_steps < max_env_steps:
                 current_iter = runner.current_learning_iteration
                 iter_start_time_ts = time.time()
+                steps_before_learn = runner.global_step
 
                 # --- 5.1 运行一个学习迭代 ---
                 try:
@@ -2090,11 +2091,45 @@ def train_curriculum(args):
                     else: print(f"❌ 训练迭代运行时错误: {str(e)}"); raise e
                 except Exception as e: print(f"❌ 训练迭代中发生未知异常: {str(e)}"); raise e
 
+                # # --- 5.2 获取统计数据和更新步数 ---
+                # train_info = runner.get_inference_stats(); train_info = train_info or {}
+                # new_total_env_steps = runner.global_step
+                # steps_this_iter = new_total_env_steps - total_env_steps
+                # total_env_steps = new_total_env_steps
+
+                # # --- 5.3 日志记录 ---
+                # iter_time_sec = time.time() - iter_start_time_ts
+                # elapsed_time_sec = time.time() - start_time_ts
+                # elapsed_timedelta = timedelta(seconds=int(elapsed_time_sec))
+
+                # if time.time() - last_log_time_ts > 30 or current_iter % 50 == 0:
+                #      mean_reward = train_info.get('mean_reward', float('nan')); mean_reward = float(mean_reward) if not isinstance(mean_reward, (int, float)) else mean_reward
+                #      mean_ep_length = train_info.get('mean_episode_length', float('nan')); mean_ep_length = float(mean_ep_length) if not isinstance(mean_ep_length, (int, float)) else mean_ep_length
+                #      # 尝试从 env.extras 获取最新的 success_rate
+                #      current_success_rate = env.extras.get('success_rate', train_info.get('success_rate')) # Runner 可能也会计算
+                #      if current_success_rate is None: current_success_rate = 0.0 # Default if not found
+                #      else: current_success_rate = float(current_success_rate) if not isinstance(current_success_rate, (int, float)) else current_success_rate
+
+
+                #      log_msg = (f"S{stage}.{sub_stage} | It {current_iter+1:>5}/{max_iterations} | "
+                #                 f"Steps {total_env_steps/1e6:>6.1f}M/{max_env_steps/1e6:.1f}M | "
+                #                 f"Rew {mean_reward:>6.2f} | Len {mean_ep_length:>5.1f} | "
+                #                 f"SR {current_success_rate:.3f} | iter time {iter_time_sec:.2f}s | Elap {str(elapsed_timedelta)}")
+                #      print(log_msg)
+                #      last_log_time_ts = time.time()
+
+                #      curriculum_mgr.update_statistics(current_success_rate, mean_reward, steps_this_iter)
+
                 # --- 5.2 获取统计数据和更新步数 ---
-                train_info = runner.get_inference_stats(); train_info = train_info or {}
                 new_total_env_steps = runner.global_step
                 steps_this_iter = new_total_env_steps - total_env_steps
                 total_env_steps = new_total_env_steps
+
+                # --- !!! FIX: Use the new get_inference_stats method !!! ---
+                train_info = runner.get_inference_stats()
+                # Ensure train_info is a dict even if method returns None (shouldn't happen now)
+                train_info = train_info or {}
+                # ---------------------------------------------------------
 
                 # --- 5.3 日志记录 ---
                 iter_time_sec = time.time() - iter_start_time_ts
@@ -2102,12 +2137,16 @@ def train_curriculum(args):
                 elapsed_timedelta = timedelta(seconds=int(elapsed_time_sec))
 
                 if time.time() - last_log_time_ts > 30 or current_iter % 50 == 0:
-                     mean_reward = train_info.get('mean_reward', float('nan')); mean_reward = float(mean_reward) if not isinstance(mean_reward, (int, float)) else mean_reward
-                     mean_ep_length = train_info.get('mean_episode_length', float('nan')); mean_ep_length = float(mean_ep_length) if not isinstance(mean_ep_length, (int, float)) else mean_ep_length
-                     # 尝试从 env.extras 获取最新的 success_rate
-                     current_success_rate = env.extras.get('success_rate', train_info.get('success_rate')) # Runner 可能也会计算
-                     if current_success_rate is None: current_success_rate = 0.0 # Default if not found
-                     else: current_success_rate = float(current_success_rate) if not isinstance(current_success_rate, (int, float)) else current_success_rate
+                     # Access stats using the keys defined in runner.current_statistics
+                     mean_reward = train_info.get('mean_reward', float('nan'))
+                     mean_ep_length = train_info.get('mean_episode_length', float('nan'))
+                     # Get success rate preferably from env.extras where it's directly set
+                     current_success_rate = env.extras.get('success_rate', train_info.get('success_rate', 0.0)) # Fallback to runner stat
+
+                     # Ensure types are float
+                     mean_reward = float(mean_reward) if not isinstance(mean_reward, (int, float)) else mean_reward
+                     mean_ep_length = float(mean_ep_length) if not isinstance(mean_ep_length, (int, float)) else mean_ep_length
+                     current_success_rate = float(current_success_rate) if not isinstance(current_success_rate, (int, float)) else current_success_rate
 
 
                      log_msg = (f"S{stage}.{sub_stage} | It {current_iter+1:>5}/{max_iterations} | "
@@ -2117,6 +2156,7 @@ def train_curriculum(args):
                      print(log_msg)
                      last_log_time_ts = time.time()
 
+                     # Update curriculum manager with the obtained stats
                      curriculum_mgr.update_statistics(current_success_rate, mean_reward, steps_this_iter)
 
 

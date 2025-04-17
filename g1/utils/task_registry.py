@@ -389,6 +389,11 @@ class TaskRegistry():
             print(f"  Log directory set to: {log_dir}")
 
 
+        print(f"✅ OnPolicyRunner 来自: {OnPolicyRunner.__module__}")
+        import inspect
+        print(f"✅ OnPolicyRunner 定义文件: {inspect.getfile(OnPolicyRunner)}")
+
+
         # 5. Create the runner instance
         try:
             # Convert train_cfg object to dict for OnPolicyRunner
