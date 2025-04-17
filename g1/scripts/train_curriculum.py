@@ -2343,28 +2343,89 @@ def train_curriculum(args):
             import traceback
             traceback.print_exc()
 
+    # finally:
+    #     # --- 6. 收尾工作 ---
+    #     print("\n--- 6. 训练结束，执行收尾 ---")
+    #     current_steps = total_env_steps
+    #     try:
+    #         if 'curriculum_mgr' in locals() and curriculum_mgr:
+    #              curriculum_mgr.save_curriculum_state(current_steps)
+    #              print(f"  💾 最终课程状态已保存。")
+    #         if 'runner' in locals() and runner and runner.log_dir:
+    #              final_iter = getattr(runner, 'current_learning_iteration', 'final')
+    #              final_model_path = os.path.join(runner.log_dir, f'model_{final_iter}.pt')
+    #              runner.save(final_model_path)
+    #              print(f"  💾 最终模型保存路径: {final_model_path}")
+    #         if 'env' in locals() and env is not None:
+    #              env.close()
+    #              print("  ✅ 环境已关闭。")
+    #     except Exception as e:
+    #         print(f"  ❌ 保存最终状态或关闭环境失败: {str(e)}")
+
+    #     if sim is not None and gym is not None:
+    #         gym.destroy_sim(sim)
+    #         print("  ✅ Simulation 已销毁。")
+    #     print("\n🏁 训练流程结束 🏁")
     finally:
         # --- 6. 收尾工作 ---
         print("\n--- 6. 训练结束，执行收尾 ---")
+        # total_env_steps 应该在 try 块结束或 except 块捕获时有最终值
         current_steps = total_env_steps
         try:
+            # 保存课程状态 (通常比较安全)
             if 'curriculum_mgr' in locals() and curriculum_mgr:
                  curriculum_mgr.save_curriculum_state(current_steps)
                  print(f"  💾 最终课程状态已保存。")
-            if 'runner' in locals() and runner and runner.log_dir:
-                 final_iter = getattr(runner, 'current_learning_iteration', 'final')
-                 final_model_path = os.path.join(runner.log_dir, f'model_{final_iter}.pt')
-                 runner.save(final_model_path)
-                 print(f"  💾 最终模型保存路径: {final_model_path}")
+
+            # --- 健壮地保存最终模型 ---
+            model_saved = False
+            if 'runner' in locals() and runner is not None: # 检查 runner 是否存在且不是 None
+                if hasattr(runner, 'log_dir') and runner.log_dir: # 检查 log_dir 是否有效
+                    # 检查 current_learning_iteration 是否存在
+                    if hasattr(runner, 'current_learning_iteration'):
+                        final_iter = runner.current_learning_iteration
+                    else:
+                        # 如果属性不存在（可能因为初始化错误），使用 'final' 作为回退
+                        print("⚠️ Warning: Runner 对象缺少 'current_learning_iteration' 属性。使用 'final' 作为模型文件名。")
+                        final_iter = 'final'
+
+                    final_model_path = os.path.join(runner.log_dir, f'model_{final_iter}.pt')
+                    print(f"  尝试保存最终模型到: {final_model_path}")
+                    try:
+                        # runner.save 内部应该处理模型是否存在等问题
+                        saved_path = runner.save(final_model_path)
+                        if saved_path:
+                            print(f"  💾 最终模型已保存。")
+                            model_saved = True
+                        else:
+                            print(f"  ⚠️ Runner.save 返回 None，模型可能未保存。")
+                    except AttributeError as ae:
+                        print(f"  ❌ 保存最终模型时发生属性错误 (可能 runner 状态不完整): {ae}")
+                    except Exception as e_save:
+                        print(f"  ❌ 保存最终模型时发生其他错误: {e_save}")
+                else:
+                    print("  ⚠️ 无法保存最终模型: Runner log_dir 缺失或无效。")
+            else:
+                print("  ⚠️ 无法保存最终模型: Runner 对象不存在或为 None。")
+            # --- 结束模型保存 ---
+
+            # 关闭环境
             if 'env' in locals() and env is not None:
                  env.close()
                  print("  ✅ 环境已关闭。")
-        except Exception as e:
-            print(f"  ❌ 保存最终状态或关闭环境失败: {str(e)}")
 
+        except Exception as e_cleanup:
+            print(f"  ❌ 在保存最终状态或关闭环境时发生错误: {str(e_cleanup)}")
+            import traceback
+            traceback.print_exc() # 打印详细错误
+
+        # 销毁 Simulation (无论如何都尝试执行)
         if sim is not None and gym is not None:
-            gym.destroy_sim(sim)
-            print("  ✅ Simulation 已销毁。")
+            try:
+                gym.destroy_sim(sim)
+                print("  ✅ Simulation 已销毁。")
+            except Exception as e_sim:
+                print(f"  ❌ 销毁 Simulation 时发生错误: {e_sim}")
         print("\n🏁 训练流程结束 🏁")
 
 
