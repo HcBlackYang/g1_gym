@@ -1,167 +1,167 @@
 
-# # g1_basic_locomotion.py
-# from g1.envs.curriculum.curriculum_base import G1CurriculumBase # Use the updated base class
+# g1_basic_locomotion.py
+from g1.envs.curriculum.curriculum_base import G1CurriculumBase # Use the updated base class
 
-# from isaacgym.torch_utils import *
-# import torch
-# import numpy as np
+from isaacgym.torch_utils import *
+import torch
+import numpy as np
 
-# class G1BasicLocomotion(G1CurriculumBase):
-#     """第一阶段：基础运动技能训练.
-#     继承自 G1CurriculumBase，实现阶段特定逻辑。
-#     """
+class G1BasicLocomotion(G1CurriculumBase):
+    """第一阶段：基础运动技能训练.
+    继承自 G1CurriculumBase，实现阶段特定逻辑。
+    """
 
-#     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, gym_handle=None, sim_handle=None):
-#         # --- Stage 1 Specific Config Processing ---
-#         # Stage params should be accessed *after* super().__init__ if they modify base cfg behavior
-#         # But we need base_lin_vel_range *before* command resampling might happen in reset.
-#         # Let's read them here, but ensure super init happens correctly.
-#         stage_params_attr = f'stage{cfg.curriculum.stage}_params' # Access cfg directly before super init
-#         stage_params = {}
-#         if hasattr(cfg.curriculum, stage_params_attr):
-#             stage_params = getattr(cfg.curriculum, stage_params_attr, {})
-#         else:
-#              print(f"⚠️ G1BasicLocomotion: Warning - Could not find '{stage_params_attr}' in cfg.curriculum during pre-init.")
+    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, gym_handle=None, sim_handle=None):
+        # --- Stage 1 Specific Config Processing ---
+        # Stage params should be accessed *after* super().__init__ if they modify base cfg behavior
+        # But we need base_lin_vel_range *before* command resampling might happen in reset.
+        # Let's read them here, but ensure super init happens correctly.
+        stage_params_attr = f'stage{cfg.curriculum.stage}_params' # Access cfg directly before super init
+        stage_params = {}
+        if hasattr(cfg.curriculum, stage_params_attr):
+            stage_params = getattr(cfg.curriculum, stage_params_attr, {})
+        else:
+             print(f"⚠️ G1BasicLocomotion: Warning - Could not find '{stage_params_attr}' in cfg.curriculum during pre-init.")
 
-#         self.base_lin_vel_range = stage_params.get('base_lin_vel_range', 1.0)
-#         self.base_ang_vel_range = stage_params.get('base_ang_vel_range', 0.5)
-#         print(f"--- G1BasicLocomotion Pre-init: lin_vel_range={self.base_lin_vel_range}, ang_vel_range={self.base_ang_vel_range}")
+        self.base_lin_vel_range = stage_params.get('base_lin_vel_range', 1.0)
+        self.base_ang_vel_range = stage_params.get('base_ang_vel_range', 0.5)
+        print(f"--- G1BasicLocomotion Pre-init: lin_vel_range={self.base_lin_vel_range}, ang_vel_range={self.base_ang_vel_range}")
 
-#         # --- 调用父类初始化 ---
-#         super().__init__(cfg, sim_params, physics_engine, sim_device, headless, gym_handle=gym_handle, sim_handle=sim_handle)
-#         print(f"--- G1BasicLocomotion Post-super().__init__ ---")
-
-
-#         # --- Stage 1 Specific State Initialization (after buffers are ready) ---
-#         # 使用 episode_length_buf 来判断命令周期
-#         # self.command_duration = 0 # No longer needed
-
-#         # Resetting streak counter logic moved to _resample_commands and reset_idx
-#         self.successful_command_tracking_streak = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
-#         # Calculate steps needed based on final dt
-#         self.resampling_interval_steps = int(self.cfg.commands.resampling_time / self.dt)
-#         self.min_tracking_steps_for_success = int(self.resampling_interval_steps * 0.8) # 80% of interval
-#         print(f"  Resampling interval: {self.resampling_interval_steps} steps")
-#         print(f"  Min tracking steps for success: {self.min_tracking_steps_for_success}")
+        # --- 调用父类初始化 ---
+        super().__init__(cfg, sim_params, physics_engine, sim_device, headless, gym_handle=gym_handle, sim_handle=sim_handle)
+        print(f"--- G1BasicLocomotion Post-super().__init__ ---")
 
 
-#     def _resample_commands(self, env_ids):
-#         """重写命令采样方法以应用课程子阶段进度"""
-#         if len(env_ids) == 0: return
+        # --- Stage 1 Specific State Initialization (after buffers are ready) ---
+        # 使用 episode_length_buf 来判断命令周期
+        # self.command_duration = 0 # No longer needed
 
-#         sub_stage = getattr(self.cfg.curriculum, 'sub_stage', 1)
-#         # progress_factor = min(1.0, sub_stage / 5.0) # Linear
-#         progress_factor = np.clip(sub_stage / 5.0, 0.1, 1.0) # Clipped
-
-#         current_vel_range = self.base_lin_vel_range * progress_factor
-#         current_ang_range = self.base_ang_vel_range * progress_factor
-
-#         # --- 调用父类 LeggedRobot 的 _resample_commands ---
-#         # 它处理基础的速度和朝向命令采样
-#         super()._resample_commands(env_ids)
-
-#         # --- 如果需要覆盖父类的采样逻辑或进行特定调整，在此处进行 ---
-#         # 例如，强制 Stage 1 不使用侧向速度 (如果父类采样了 lin_vel_y)
-#         # self.commands[env_ids, 1] = 0.0
-
-#         # --- 重置这些环境的成功跟踪计数器 ---
-#         if hasattr(self, 'successful_command_tracking_streak'): # Ensure buffer exists
-#             self.successful_command_tracking_streak[env_ids] = 0
+        # Resetting streak counter logic moved to _resample_commands and reset_idx
+        self.successful_command_tracking_streak = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
+        # Calculate steps needed based on final dt
+        self.resampling_interval_steps = int(self.cfg.commands.resampling_time / self.dt)
+        self.min_tracking_steps_for_success = int(self.resampling_interval_steps * 0.8) # 80% of interval
+        print(f"  Resampling interval: {self.resampling_interval_steps} steps")
+        print(f"  Min tracking steps for success: {self.min_tracking_steps_for_success}")
 
 
-#     # --- Stage 1 Specific Reward Overrides ---
-#     # 这些函数会覆盖 G1CurriculumBase 中同名的函数
-#     def _reward_tracking_lin_vel(self):
-#         """(Stage 1 Override) 线速度跟踪奖励 - 更关注精确跟踪"""
-#         lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
-#         # 使用更严格的 sigma (例如 0.15 或 0.1)
-#         sigma = getattr(self.cfg.rewards, 'tracking_sigma_stage1', 0.15) # Allow config override
-#         return torch.exp(-lin_vel_error / sigma)
+    def _resample_commands(self, env_ids):
+        """重写命令采样方法以应用课程子阶段进度"""
+        if len(env_ids) == 0: return
 
-#     def _reward_tracking_ang_vel(self):
-#         """(Stage 1 Override) 角速度跟踪奖励 - 更关注精确跟踪"""
-#         ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
-#         sigma = getattr(self.cfg.rewards, 'tracking_sigma_stage1', 0.15) # Allow config override
-#         return torch.exp(-ang_vel_error / sigma)
+        sub_stage = getattr(self.cfg.curriculum, 'sub_stage', 1)
+        # progress_factor = min(1.0, sub_stage / 5.0) # Linear
+        progress_factor = np.clip(sub_stage / 5.0, 0.1, 1.0) # Clipped
 
+        current_vel_range = self.base_lin_vel_range * progress_factor
+        current_ang_range = self.base_ang_vel_range * progress_factor
 
-#     # --- Stage 1 Specific Success Criteria ---
-#     def compute_success_criteria(self):
-#         """计算每个环境是否在当前命令周期内达到了连续成功跟踪的条件"""
-#         # 1. 判断当前步骤是否在跟踪容差内
-#         # lin_vel_threshold = getattr(self.cfg.curriculum, 'stage1_success_lin_tol', 0.3)
-#         # ang_vel_threshold = getattr(self.cfg.curriculum, 'stage1_success_ang_tol', 0.2)
-#         #
-#         # lin_vel_close = torch.norm(self.commands[:, :2] - self.base_lin_vel[:, :2], dim=1) < lin_vel_threshold
-#         # ang_vel_close = torch.abs(self.commands[:, 2] - self.base_ang_vel[:, 2]) < ang_vel_threshold
-#         lin_vel_threshold = 0.3 # m/s error tolerance
-#         ang_vel_threshold = 0.2 # rad/s error tolerance
+        # --- 调用父类 LeggedRobot 的 _resample_commands ---
+        # 它处理基础的速度和朝向命令采样
+        super()._resample_commands(env_ids)
 
-#         lin_vel_close = torch.norm(self.commands[:, :2] - self.base_lin_vel[:, :2], dim=1) < lin_vel_threshold
-#         ang_vel_close = torch.abs(self.commands[:, 2] - self.base_ang_vel[:, 2]) < ang_vel_threshold
+        # --- 如果需要覆盖父类的采样逻辑或进行特定调整，在此处进行 ---
+        # 例如，强制 Stage 1 不使用侧向速度 (如果父类采样了 lin_vel_y)
+        # self.commands[env_ids, 1] = 0.0
 
-#         current_step_tracking = lin_vel_close & ang_vel_close
-
-#         # 2. 更新连续跟踪计数器
-#         # 仅当当前步骤在跟踪时才增加计数，否则重置
-#         self.successful_command_tracking_streak = (self.successful_command_tracking_streak + 1) * current_step_tracking
-
-#         # 3. 判断是否达到连续成功的步数阈值
-#         reached_threshold = self.successful_command_tracking_streak >= self.min_tracking_steps_for_success
-
-#         # 4. 检查是否是命令周期的最后一步 (近似)
-#         # 如果 episode_length_buf 能被 resampling_interval_steps 整除 (或余数很小)，认为是周期结束
-#         is_end_of_command_cycle = (self.episode_length_buf % self.resampling_interval_steps == (self.resampling_interval_steps - 1))
-
-#         # 5. 成功标志：当达到阈值 *并且* 处于命令周期结束时，才标记为成功
-#         #    这样可以确保在一个完整的命令周期内评估跟踪性能
-#         # success_flags = reached_threshold & is_end_of_command_cycle
-#         # --- 或者更简单的：只要达到阈值就认为是成功（允许在一个周期内多次成功？）---
-#         success_flags = reached_threshold
-
-#         # 如果一个环境刚刚成功，重置其计数器，以便它可以为下一个命令周期重新计数
-#         # self.successful_command_tracking_streak[success_flags] = 0 # Reset counter immediately on success?
-
-#         return success_flags
+        # --- 重置这些环境的成功跟踪计数器 ---
+        if hasattr(self, 'successful_command_tracking_streak'): # Ensure buffer exists
+            self.successful_command_tracking_streak[env_ids] = 0
 
 
-#     def post_physics_step(self):
-#         """Stage 1 后处理: 计算成功标志并放入 extras"""
-#         # --- 1. 调用父类 (G1CurriculumBase) 的后处理 ---
-#         # 这会处理相位计算、命令重采样、调用 LeggedRobot 的后处理等
-#         super().post_physics_step()
+    # --- Stage 1 Specific Reward Overrides ---
+    # 这些函数会覆盖 G1CurriculumBase 中同名的函数
+    def _reward_tracking_lin_vel(self):
+        """(Stage 1 Override) 线速度跟踪奖励 - 更关注精确跟踪"""
+        lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
+        # 使用更严格的 sigma (例如 0.15 或 0.1)
+        sigma = getattr(self.cfg.rewards, 'tracking_sigma_stage1', 0.15) # Allow config override
+        return torch.exp(-lin_vel_error / sigma)
 
-#         # --- 2. 计算本阶段的成功标准 ---
-#         # compute_success_criteria 更新了 streak 并返回了哪些环境达到了连续成功阈值
-#         success_flags = self.compute_success_criteria()
-
-#         # --- 3. 将成功标志放入 extras 字典供 Runner 使用 ---
-
-#         self.extras["success_flags"] = success_flags.clone() # Send a copy
-
-#         # --- 4. 重置成功计数器 (可选，取决于你的成功定义) ---
-#         # 如果成功是一次性事件（达到N次就算成功），则需要重置计数器
-#         # 如果 Runner 期望每一步都报告是否处于“成功状态”，则不需要在这里重置
-#         # 假设 Runner 会统计 True 的比例，我们在成功时重置计数器，以便开始下一个周期的计数
-#         if success_flags.any():
-#             self.successful_command_tracking_streak[success_flags] = 0
-
-#         # --- 5. 重置因环境 reset 而中断的计数器 ---
-#         # (父类的 post_physics_step 调用了 reset_idx，reset_idx 会重置 streak)
-#         # 所以这里不需要再次处理 reset_buf
+    def _reward_tracking_ang_vel(self):
+        """(Stage 1 Override) 角速度跟踪奖励 - 更关注精确跟踪"""
+        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
+        sigma = getattr(self.cfg.rewards, 'tracking_sigma_stage1', 0.15) # Allow config override
+        return torch.exp(-ang_vel_error / sigma)
 
 
-#     def reset_idx(self, env_ids):
-#          """ 重写 reset_idx 以重置 Stage 1 特定状态 """
-#          if len(env_ids) == 0: return
+    # --- Stage 1 Specific Success Criteria ---
+    def compute_success_criteria(self):
+        """计算每个环境是否在当前命令周期内达到了连续成功跟踪的条件"""
+        # 1. 判断当前步骤是否在跟踪容差内
+        # lin_vel_threshold = getattr(self.cfg.curriculum, 'stage1_success_lin_tol', 0.3)
+        # ang_vel_threshold = getattr(self.cfg.curriculum, 'stage1_success_ang_tol', 0.2)
+        #
+        # lin_vel_close = torch.norm(self.commands[:, :2] - self.base_lin_vel[:, :2], dim=1) < lin_vel_threshold
+        # ang_vel_close = torch.abs(self.commands[:, 2] - self.base_ang_vel[:, 2]) < ang_vel_threshold
+        lin_vel_threshold = 0.3 # m/s error tolerance
+        ang_vel_threshold = 0.2 # rad/s error tolerance
 
-#          # 调用父类 reset (重置机器人状态、命令、基础缓冲区等)
-#          super().reset_idx(env_ids)
+        lin_vel_close = torch.norm(self.commands[:, :2] - self.base_lin_vel[:, :2], dim=1) < lin_vel_threshold
+        ang_vel_close = torch.abs(self.commands[:, 2] - self.base_ang_vel[:, 2]) < ang_vel_threshold
 
-#          # 重置本阶段特定的状态
-#          if hasattr(self, 'successful_command_tracking_streak'): # Ensure buffer exists
-#               self.successful_command_tracking_streak[env_ids] = 0
-#          # print(f"  G1BasicLocomotion: Resetting success streak for {len(env_ids)} environments.")
+        current_step_tracking = lin_vel_close & ang_vel_close
+
+        # 2. 更新连续跟踪计数器
+        # 仅当当前步骤在跟踪时才增加计数，否则重置
+        self.successful_command_tracking_streak = (self.successful_command_tracking_streak + 1) * current_step_tracking
+
+        # 3. 判断是否达到连续成功的步数阈值
+        reached_threshold = self.successful_command_tracking_streak >= self.min_tracking_steps_for_success
+
+        # 4. 检查是否是命令周期的最后一步 (近似)
+        # 如果 episode_length_buf 能被 resampling_interval_steps 整除 (或余数很小)，认为是周期结束
+        is_end_of_command_cycle = (self.episode_length_buf % self.resampling_interval_steps == (self.resampling_interval_steps - 1))
+
+        # 5. 成功标志：当达到阈值 *并且* 处于命令周期结束时，才标记为成功
+        #    这样可以确保在一个完整的命令周期内评估跟踪性能
+        # success_flags = reached_threshold & is_end_of_command_cycle
+        # --- 或者更简单的：只要达到阈值就认为是成功（允许在一个周期内多次成功？）---
+        success_flags = reached_threshold
+
+        # 如果一个环境刚刚成功，重置其计数器，以便它可以为下一个命令周期重新计数
+        # self.successful_command_tracking_streak[success_flags] = 0 # Reset counter immediately on success?
+
+        return success_flags
+
+
+    def post_physics_step(self):
+        """Stage 1 后处理: 计算成功标志并放入 extras"""
+        # --- 1. 调用父类 (G1CurriculumBase) 的后处理 ---
+        # 这会处理相位计算、命令重采样、调用 LeggedRobot 的后处理等
+        super().post_physics_step()
+
+        # --- 2. 计算本阶段的成功标准 ---
+        # compute_success_criteria 更新了 streak 并返回了哪些环境达到了连续成功阈值
+        success_flags = self.compute_success_criteria()
+
+        # --- 3. 将成功标志放入 extras 字典供 Runner 使用 ---
+
+        self.extras["success_flags"] = success_flags.clone() # Send a copy
+
+        # --- 4. 重置成功计数器 (可选，取决于你的成功定义) ---
+        # 如果成功是一次性事件（达到N次就算成功），则需要重置计数器
+        # 如果 Runner 期望每一步都报告是否处于“成功状态”，则不需要在这里重置
+        # 假设 Runner 会统计 True 的比例，我们在成功时重置计数器，以便开始下一个周期的计数
+        if success_flags.any():
+            self.successful_command_tracking_streak[success_flags] = 0
+
+        # --- 5. 重置因环境 reset 而中断的计数器 ---
+        # (父类的 post_physics_step 调用了 reset_idx，reset_idx 会重置 streak)
+        # 所以这里不需要再次处理 reset_buf
+
+
+    def reset_idx(self, env_ids):
+         """ 重写 reset_idx 以重置 Stage 1 特定状态 """
+         if len(env_ids) == 0: return
+
+         # 调用父类 reset (重置机器人状态、命令、基础缓冲区等)
+         super().reset_idx(env_ids)
+
+         # 重置本阶段特定的状态
+         if hasattr(self, 'successful_command_tracking_streak'): # Ensure buffer exists
+              self.successful_command_tracking_streak[env_ids] = 0
+         # print(f"  G1BasicLocomotion: Resetting success streak for {len(env_ids)} environments.")
 
 
 # from g1.envs.curriculum.curriculum_base import G1CurriculumBase # Use the updated base class
@@ -541,269 +541,269 @@
 #          if hasattr(self, 'successful_command_tracking_streak'): # Ensure buffer exists
 #               self.successful_command_tracking_streak[env_ids] = 0
 
-# g1_basic_locomotion.py
-from g1.envs.curriculum.curriculum_base import G1CurriculumBase
-from isaacgym.torch_utils import *
-import torch
-import numpy as np
-from g1.utils.helpers import DotDict # <--- ADD THIS IMPORT
+# # g1_basic_locomotion.py
+# from g1.envs.curriculum.curriculum_base import G1CurriculumBase
+# from isaacgym.torch_utils import *
+# import torch
+# import numpy as np
+# from g1.utils.helpers import DotDict # <--- ADD THIS IMPORT
 
-class G1BasicLocomotion(G1CurriculumBase):
-    """第一阶段：基础运动技能训练 (支持嵌套课程学习).
-    继承自 G1CurriculumBase，实现阶段特定逻辑，特别是子阶段处理。
-    """
+# class G1BasicLocomotion(G1CurriculumBase):
+#     """第一阶段：基础运动技能训练 (支持嵌套课程学习).
+#     继承自 G1CurriculumBase，实现阶段特定逻辑，特别是子阶段处理。
+#     """
 
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, gym_handle=None, sim_handle=None):
-        # --- 1. 预处理配置，特别是嵌套课程参数 ---
-        self.is_nested_curriculum = getattr(cfg, 'nested_locomotion_curriculum', False)
-        self.current_sub_stage = getattr(cfg.curriculum, 'sub_stage', 1) # Get sub_stage BEFORE super init
-        self.active_joint_indices = None
-        self.num_total_dofs = 43 # G1 的总自由度
+#     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, gym_handle=None, sim_handle=None):
+#         # --- 1. 预处理配置，特别是嵌套课程参数 ---
+#         self.is_nested_curriculum = getattr(cfg, 'nested_locomotion_curriculum', False)
+#         self.current_sub_stage = getattr(cfg.curriculum, 'sub_stage', 1) # Get sub_stage BEFORE super init
+#         self.active_joint_indices = None
+#         self.num_total_dofs = 43 # G1 的总自由度
 
-        if self.is_nested_curriculum and hasattr(cfg, 'sub_stage_params'):
-            print(f"--- G1BasicLocomotion (Nested): Initializing for Sub-Stage 1.{self.current_sub_stage} ---")
-            # Get sub-stage params as a standard dict first
-            sub_stage_cfg_dict = cfg.sub_stage_params.get(self.current_sub_stage)
-            if sub_stage_cfg_dict:
-                # Now convert to DotDict for easier access within this method
-                sub_stage_cfg = DotDict(sub_stage_cfg_dict)
-                print(f"  Loading params for sub-stage {self.current_sub_stage}: {sub_stage_cfg.get('name', 'N/A')}")
+#         if self.is_nested_curriculum and hasattr(cfg, 'sub_stage_params'):
+#             print(f"--- G1BasicLocomotion (Nested): Initializing for Sub-Stage 1.{self.current_sub_stage} ---")
+#             # Get sub-stage params as a standard dict first
+#             sub_stage_cfg_dict = cfg.sub_stage_params.get(self.current_sub_stage)
+#             if sub_stage_cfg_dict:
+#                 # Now convert to DotDict for easier access within this method
+#                 sub_stage_cfg = DotDict(sub_stage_cfg_dict)
+#                 print(f"  Loading params for sub-stage {self.current_sub_stage}: {sub_stage_cfg.get('name', 'N/A')}")
 
-                # Get dimensions from sub-stage config
-                self.num_observations_override = sub_stage_cfg.get('num_observations')
-                self.num_actions_override = sub_stage_cfg.get('num_actions')
-                self.num_privileged_obs_override = sub_stage_cfg.get('num_privileged_obs')
+#                 # Get dimensions from sub-stage config
+#                 self.num_observations_override = sub_stage_cfg.get('num_observations')
+#                 self.num_actions_override = sub_stage_cfg.get('num_actions')
+#                 self.num_privileged_obs_override = sub_stage_cfg.get('num_privileged_obs')
 
-                if self.num_observations_override is None or self.num_actions_override is None:
-                    print(f"  ⚠️ Warning: Sub-stage {self.current_sub_stage} config missing num_observations or num_actions. Using parent config defaults.")
-                    self.num_observations_override = cfg.env.num_observations
-                    self.num_actions_override = cfg.env.num_actions
-                    self.num_privileged_obs_override = getattr(cfg.env, 'num_privileged_obs', None)
-                # else: # Dimensions found in sub-stage config
-                    # Override main cfg dimensions BEFORE calling super().__init__
-                cfg.env.num_observations = self.num_observations_override
-                cfg.env.num_actions = self.num_actions_override
-                if self.num_privileged_obs_override is not None:
-                    cfg.env.num_privileged_obs = self.num_privileged_obs_override
-                else: # Infer privileged obs dim if not specified
-                    cfg.env.num_privileged_obs = self.num_observations_override + 3 # Assume base lin vel added
+#                 if self.num_observations_override is None or self.num_actions_override is None:
+#                     print(f"  ⚠️ Warning: Sub-stage {self.current_sub_stage} config missing num_observations or num_actions. Using parent config defaults.")
+#                     self.num_observations_override = cfg.env.num_observations
+#                     self.num_actions_override = cfg.env.num_actions
+#                     self.num_privileged_obs_override = getattr(cfg.env, 'num_privileged_obs', None)
+#                 # else: # Dimensions found in sub-stage config
+#                     # Override main cfg dimensions BEFORE calling super().__init__
+#                 cfg.env.num_observations = self.num_observations_override
+#                 cfg.env.num_actions = self.num_actions_override
+#                 if self.num_privileged_obs_override is not None:
+#                     cfg.env.num_privileged_obs = self.num_privileged_obs_override
+#                 else: # Infer privileged obs dim if not specified
+#                     cfg.env.num_privileged_obs = self.num_observations_override + 3 # Assume base lin vel added
 
-                print(f"  Overriding main cfg dimensions: Obs={cfg.env.num_observations}, PrivObs={cfg.env.num_privileged_obs}, Act={cfg.env.num_actions}")
+#                 print(f"  Overriding main cfg dimensions: Obs={cfg.env.num_observations}, PrivObs={cfg.env.num_privileged_obs}, Act={cfg.env.num_actions}")
 
-                # Store sub-stage specific velocity ranges
-                self.base_lin_vel_range = sub_stage_cfg.get('base_lin_vel_range', cfg.commands.ranges.lin_vel_x[1])
-                self.base_ang_vel_range = sub_stage_cfg.get('base_ang_vel_range', cfg.commands.ranges.ang_vel_yaw[1])
-                print(f"  Sub-stage velocity ranges: Lin={self.base_lin_vel_range}, Ang={self.base_ang_vel_range}")
+#                 # Store sub-stage specific velocity ranges
+#                 self.base_lin_vel_range = sub_stage_cfg.get('base_lin_vel_range', cfg.commands.ranges.lin_vel_x[1])
+#                 self.base_ang_vel_range = sub_stage_cfg.get('base_ang_vel_range', cfg.commands.ranges.ang_vel_yaw[1])
+#                 print(f"  Sub-stage velocity ranges: Lin={self.base_lin_vel_range}, Ang={self.base_ang_vel_range}")
 
-                # Store active joint info (keywords for now, indices computed later)
-                self.active_joint_keywords = sub_stage_cfg.get('active_joints', ["all"])
-                print(f"  Active joint keywords: {self.active_joint_keywords}")
+#                 # Store active joint info (keywords for now, indices computed later)
+#                 self.active_joint_keywords = sub_stage_cfg.get('active_joints', ["all"])
+#                 print(f"  Active joint keywords: {self.active_joint_keywords}")
 
-            else:
-                print(f"⚠️ G1BasicLocomotion: Warning - Could not find sub_stage_params for sub-stage {self.current_sub_stage}. Using main config defaults.")
-                self.base_lin_vel_range = cfg.commands.ranges.lin_vel_x[1]
-                self.base_ang_vel_range = cfg.commands.ranges.ang_vel_yaw[1]
-                self.active_joint_keywords = ["all"]
-                # Ensure override vars reflect the actual dimensions used
-                self.num_actions_override = cfg.env.num_actions
-                self.num_observations_override = cfg.env.num_observations
-                self.num_privileged_obs_override = getattr(cfg.env, 'num_privileged_obs', None)
-        else:
-            # (Keep non-nested logic as before)
-            print(f"--- G1BasicLocomotion: Initializing (No Nested Curriculum or Config) ---")
-            self.base_lin_vel_range = cfg.commands.ranges.lin_vel_x[1]
-            self.base_ang_vel_range = cfg.commands.ranges.ang_vel_yaw[1]
-            self.active_joint_keywords = ["all"]
-            self.num_actions_override = cfg.env.num_actions
-            self.num_observations_override = cfg.env.num_observations
-            self.num_privileged_obs_override = getattr(cfg.env, 'num_privileged_obs', None)
-
-
-        # --- 2. 调用父类初始化 ---
-        # (Keep super().__init__ call as before)
-        super().__init__(cfg, sim_params, physics_engine, sim_device, headless, gym_handle=gym_handle, sim_handle=sim_handle)
-        print(f"--- G1BasicLocomotion Post-super().__init__ ---")
-        # (Keep dimension verification as before)
-        if self.num_actions != self.num_actions_override: print(f"❌ CRITICAL WARNING: Final self.num_actions ({self.num_actions}) != expected override ({self.num_actions_override})!")
-        if self.num_observations != self.num_observations_override: print(f"❌ CRITICAL WARNING: Final self.num_observations ({self.num_observations}) != expected override ({self.num_observations_override})!")
-        print(f"  Final instance dimensions: Obs={self.num_observations}, PrivObs={self.num_privileged_obs}, Act={self.num_actions}")
+#             else:
+#                 print(f"⚠️ G1BasicLocomotion: Warning - Could not find sub_stage_params for sub-stage {self.current_sub_stage}. Using main config defaults.")
+#                 self.base_lin_vel_range = cfg.commands.ranges.lin_vel_x[1]
+#                 self.base_ang_vel_range = cfg.commands.ranges.ang_vel_yaw[1]
+#                 self.active_joint_keywords = ["all"]
+#                 # Ensure override vars reflect the actual dimensions used
+#                 self.num_actions_override = cfg.env.num_actions
+#                 self.num_observations_override = cfg.env.num_observations
+#                 self.num_privileged_obs_override = getattr(cfg.env, 'num_privileged_obs', None)
+#         else:
+#             # (Keep non-nested logic as before)
+#             print(f"--- G1BasicLocomotion: Initializing (No Nested Curriculum or Config) ---")
+#             self.base_lin_vel_range = cfg.commands.ranges.lin_vel_x[1]
+#             self.base_ang_vel_range = cfg.commands.ranges.ang_vel_yaw[1]
+#             self.active_joint_keywords = ["all"]
+#             self.num_actions_override = cfg.env.num_actions
+#             self.num_observations_override = cfg.env.num_observations
+#             self.num_privileged_obs_override = getattr(cfg.env, 'num_privileged_obs', None)
 
 
-        # --- 3. 嵌套课程相关的状态初始化 ---
-        # (Keep _compute_active_joint_indices call and checks as before)
-        if not hasattr(self, 'dof_names') or not self.dof_names: print("❌ CRITICAL ERROR: self.dof_names not initialized by base class!")
-        self._compute_active_joint_indices()
-        if self.active_joint_indices is not None:
-            print(f"  Active DoF indices ({len(self.active_joint_indices)}): {self.active_joint_indices.tolist()}")
-            if len(self.active_joint_indices) != self.num_actions_override: print(f"❌ CRITICAL WARNING: Computed active joint indices ({len(self.active_joint_indices)}) != configured num_actions ({self.num_actions_override})!")
+#         # --- 2. 调用父类初始化 ---
+#         # (Keep super().__init__ call as before)
+#         super().__init__(cfg, sim_params, physics_engine, sim_device, headless, gym_handle=gym_handle, sim_handle=sim_handle)
+#         print(f"--- G1BasicLocomotion Post-super().__init__ ---")
+#         # (Keep dimension verification as before)
+#         if self.num_actions != self.num_actions_override: print(f"❌ CRITICAL WARNING: Final self.num_actions ({self.num_actions}) != expected override ({self.num_actions_override})!")
+#         if self.num_observations != self.num_observations_override: print(f"❌ CRITICAL WARNING: Final self.num_observations ({self.num_observations}) != expected override ({self.num_observations_override})!")
+#         print(f"  Final instance dimensions: Obs={self.num_observations}, PrivObs={self.num_privileged_obs}, Act={self.num_actions}")
 
 
-        # --- 4. Stage 1 特定的状态变量 ---
-        # (Keep streak, steps calculation as before)
-        self.successful_command_tracking_streak = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
-        self.resampling_interval_steps = int(self.cfg.commands.resampling_time / self.dt) if self.dt > 0 else 0
-        self.min_tracking_steps_for_success = int(self.resampling_interval_steps * 0.8) if self.resampling_interval_steps > 0 else 0
-        print(f"  Resampling interval: {self.resampling_interval_steps} steps")
-        print(f"  Min tracking steps for success: {self.min_tracking_steps_for_success}")
-
-        # --- 5. 存储锁定关节的 PD 增益 ---
-        # (Keep locked gain storage as before)
-        self.locked_stiffness = getattr(self.cfg.control, 'locked_stiffness', 500.0)
-        self.locked_damping = getattr(self.cfg.control, 'locked_damping', 50.0)
-        print(f"  Locked joint gains: P={self.locked_stiffness}, D={self.locked_damping}")
+#         # --- 3. 嵌套课程相关的状态初始化 ---
+#         # (Keep _compute_active_joint_indices call and checks as before)
+#         if not hasattr(self, 'dof_names') or not self.dof_names: print("❌ CRITICAL ERROR: self.dof_names not initialized by base class!")
+#         self._compute_active_joint_indices()
+#         if self.active_joint_indices is not None:
+#             print(f"  Active DoF indices ({len(self.active_joint_indices)}): {self.active_joint_indices.tolist()}")
+#             if len(self.active_joint_indices) != self.num_actions_override: print(f"❌ CRITICAL WARNING: Computed active joint indices ({len(self.active_joint_indices)}) != configured num_actions ({self.num_actions_override})!")
 
 
-    # --- _compute_active_joint_indices ---
-    # (Keep implementation as before)
-    def _compute_active_joint_indices(self):
-        """根据 self.active_joint_keywords 计算活跃关节的索引列表 (使用全 43 DoF)。"""
-        if "all" in self.active_joint_keywords:
-            self.active_joint_indices = torch.arange(self.num_dof, device=self.device, dtype=torch.long)
-            return
-        active_indices = []
-        if hasattr(self, 'dof_names') and self.dof_names:
-            for idx, name in enumerate(self.dof_names):
-                is_active = any(keyword in name for keyword in self.active_joint_keywords)
-                if is_active: active_indices.append(idx)
-            self.active_joint_indices = torch.tensor(sorted(list(set(active_indices))), device=self.device, dtype=torch.long)
-        else:
-            print("⚠️ G1BasicLocomotion: Warning - self.dof_names not available. Cannot determine active indices.")
-            self.active_joint_indices = None
+#         # --- 4. Stage 1 特定的状态变量 ---
+#         # (Keep streak, steps calculation as before)
+#         self.successful_command_tracking_streak = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
+#         self.resampling_interval_steps = int(self.cfg.commands.resampling_time / self.dt) if self.dt > 0 else 0
+#         self.min_tracking_steps_for_success = int(self.resampling_interval_steps * 0.8) if self.resampling_interval_steps > 0 else 0
+#         print(f"  Resampling interval: {self.resampling_interval_steps} steps")
+#         print(f"  Min tracking steps for success: {self.min_tracking_steps_for_success}")
+
+#         # --- 5. 存储锁定关节的 PD 增益 ---
+#         # (Keep locked gain storage as before)
+#         self.locked_stiffness = getattr(self.cfg.control, 'locked_stiffness', 500.0)
+#         self.locked_damping = getattr(self.cfg.control, 'locked_damping', 50.0)
+#         print(f"  Locked joint gains: P={self.locked_stiffness}, D={self.locked_damping}")
 
 
-    # --- _process_dof_props ---
-    # (Keep implementation as before)
-    def _process_dof_props(self, props, env_id):
-        processed_props = super()._process_dof_props(props, env_id)
-        if self.is_nested_curriculum and self.active_joint_indices is not None:
-            active_set = set(self.active_joint_indices.cpu().tolist())
-            num_props = len(processed_props['stiffness'])
-            if num_props != self.num_dof: print(f"❌ ERROR _process_dof_props: Prop count {num_props} != self.num_dof {self.num_dof}"); return processed_props
-            for i in range(num_props):
-                if i not in active_set:
-                    processed_props["stiffness"][i] = self.locked_stiffness
-                    processed_props["damping"][i] = self.locked_damping
-        return processed_props
-
-    # --- _resample_commands ---
-    # (Keep implementation as before)
-    def _resample_commands(self, env_ids):
-        if len(env_ids) == 0: return
-        current_lin_vel_range = self.base_lin_vel_range
-        current_ang_vel_range = self.base_ang_vel_range
-        commands_buf = self.commands; cmd_cfg = self.cfg.commands
-        commands_buf[env_ids, 0] = torch_rand_float(-current_lin_vel_range, current_lin_vel_range, (len(env_ids), 1), device=self.device).squeeze(1)
-        commands_buf[env_ids, 1] = torch_rand_float(-current_lin_vel_range, current_lin_vel_range, (len(env_ids), 1), device=self.device).squeeze(1)
-        if cmd_cfg.heading_command and commands_buf.shape[1] >= 4: commands_buf[env_ids, 3] = torch_rand_float(cmd_cfg.ranges.heading[0], cmd_cfg.ranges.heading[1], (len(env_ids), 1), device=self.device).squeeze(1)
-        elif commands_buf.shape[1] >= 3: commands_buf[env_ids, 2] = torch_rand_float(-current_ang_vel_range, current_ang_vel_range, (len(env_ids), 1), device=self.device).squeeze(1)
-        commands_buf[env_ids, :2] *= (torch.norm(commands_buf[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
-        if hasattr(self, 'successful_command_tracking_streak'): self.successful_command_tracking_streak[env_ids] = 0
+#     # --- _compute_active_joint_indices ---
+#     # (Keep implementation as before)
+#     def _compute_active_joint_indices(self):
+#         """根据 self.active_joint_keywords 计算活跃关节的索引列表 (使用全 43 DoF)。"""
+#         if "all" in self.active_joint_keywords:
+#             self.active_joint_indices = torch.arange(self.num_dof, device=self.device, dtype=torch.long)
+#             return
+#         active_indices = []
+#         if hasattr(self, 'dof_names') and self.dof_names:
+#             for idx, name in enumerate(self.dof_names):
+#                 is_active = any(keyword in name for keyword in self.active_joint_keywords)
+#                 if is_active: active_indices.append(idx)
+#             self.active_joint_indices = torch.tensor(sorted(list(set(active_indices))), device=self.device, dtype=torch.long)
+#         else:
+#             print("⚠️ G1BasicLocomotion: Warning - self.dof_names not available. Cannot determine active indices.")
+#             self.active_joint_indices = None
 
 
-    # --- compute_observations ---
-    # (Keep implementation as before)
-    def compute_observations(self):
-        super().compute_observations()
-        # Optional final checks
-        if self.obs_buf.shape[1] != self.num_observations: print(f"❌ ERROR obs shape mismatch: {self.obs_buf.shape[1]} vs {self.num_observations}")
-        if self.privileged_obs_buf is not None and self.privileged_obs_buf.shape[1] != self.num_privileged_obs: print(f"❌ ERROR priv_obs shape mismatch: {self.privileged_obs_buf.shape[1]} vs {self.num_privileged_obs}")
+#     # --- _process_dof_props ---
+#     # (Keep implementation as before)
+#     def _process_dof_props(self, props, env_id):
+#         processed_props = super()._process_dof_props(props, env_id)
+#         if self.is_nested_curriculum and self.active_joint_indices is not None:
+#             active_set = set(self.active_joint_indices.cpu().tolist())
+#             num_props = len(processed_props['stiffness'])
+#             if num_props != self.num_dof: print(f"❌ ERROR _process_dof_props: Prop count {num_props} != self.num_dof {self.num_dof}"); return processed_props
+#             for i in range(num_props):
+#                 if i not in active_set:
+#                     processed_props["stiffness"][i] = self.locked_stiffness
+#                     processed_props["damping"][i] = self.locked_damping
+#         return processed_props
 
-    # --- _compute_torques ---
-    # (Keep implementation as before)
-    def _compute_torques(self, actions):
-        if actions.shape[1] != self.num_actions: print(f"❌ ERROR _compute_torques: actions shape {actions.shape} != num_actions {self.num_actions}"); return torch.zeros(self.num_envs, self.num_dof, device=self.device)
-        torques_full = torch.zeros(self.num_envs, self.num_dof, device=self.device)
-        if self.is_nested_curriculum and self.active_joint_indices is not None:
-            if len(self.active_joint_indices) != self.num_actions: print(f"❌ ERROR _compute_torques: index/action mismatch"); return torques_full
-            active_actions_scaled = actions * self.cfg.control.action_scale; control_type = self.cfg.control.control_type
-            active_dof_pos = self.dof_pos[:, self.active_joint_indices]; active_dof_vel = self.dof_vel[:, self.active_joint_indices]
-            active_default_pos = self.default_dof_pos[:, self.active_joint_indices]; active_p_gains = self.p_gains[self.active_joint_indices]
-            active_d_gains = self.d_gains[self.active_joint_indices]; active_torque_limits = self.torque_limits[self.active_joint_indices]
-            if control_type == "P": active_torques = active_p_gains * (active_actions_scaled + active_default_pos - active_dof_pos) - active_d_gains * active_dof_vel
-            elif control_type == "T": active_torques = active_actions_scaled
-            else: raise NameError(f"Unknown controller type: {control_type}")
-            active_torques = torch.clip(active_torques, -active_torque_limits, active_torque_limits)
-            torques_full[:, self.active_joint_indices] = active_torques
-            is_active_mask = torch.zeros(self.num_dof, dtype=torch.bool, device=self.device); is_active_mask[self.active_joint_indices] = True
-            locked_indices = torch.nonzero(~is_active_mask).squeeze(-1)
-            if len(locked_indices) > 0:
-                 locked_dof_pos = self.dof_pos[:, locked_indices]; locked_dof_vel = self.dof_vel[:, locked_indices]
-                 locked_target_pos = self.default_dof_pos[:, locked_indices]; locked_torque_limits = self.torque_limits[locked_indices]
-                 locked_torques = self.locked_stiffness * (locked_target_pos - locked_dof_pos) - self.locked_damping * locked_dof_vel
-                 locked_torques = torch.clip(locked_torques, -locked_torque_limits, locked_torque_limits)
-                 torques_full[:, locked_indices] = locked_torques
-        else:
-            if self.num_actions != self.num_dof: print(f"❌ ERROR non-nested torque: num_actions {self.num_actions} != num_dof {self.num_dof}"); return torques_full
-            torques_full = super()._compute_torques(actions)
-        return torques_full
-
-    # --- Stage 1 Specific Reward Overrides ---
-    # (Keep implementation as before)
-    def _reward_tracking_lin_vel(self):
-        lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1); sigma = 0.15
-        if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'): sub_cfg = self.cfg.sub_stage_params.get(self.current_sub_stage, {}); sigma = sub_cfg.get('tracking_sigma', sigma)
-        return torch.exp(-lin_vel_error / sigma)
-
-    def _reward_tracking_ang_vel(self):
-        if self.cfg.commands.heading_command: target_ang_vel = self.commands[:, 2]
-        else: target_ang_vel = self.commands[:, 2]
-        ang_vel_error = torch.square(target_ang_vel - self.base_ang_vel[:, 2]); sigma = 0.15
-        if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'): sub_cfg = self.cfg.sub_stage_params.get(self.current_sub_stage, {}); sigma = sub_cfg.get('tracking_sigma', sigma)
-        return torch.exp(-ang_vel_error / sigma)
+#     # --- _resample_commands ---
+#     # (Keep implementation as before)
+#     def _resample_commands(self, env_ids):
+#         if len(env_ids) == 0: return
+#         current_lin_vel_range = self.base_lin_vel_range
+#         current_ang_vel_range = self.base_ang_vel_range
+#         commands_buf = self.commands; cmd_cfg = self.cfg.commands
+#         commands_buf[env_ids, 0] = torch_rand_float(-current_lin_vel_range, current_lin_vel_range, (len(env_ids), 1), device=self.device).squeeze(1)
+#         commands_buf[env_ids, 1] = torch_rand_float(-current_lin_vel_range, current_lin_vel_range, (len(env_ids), 1), device=self.device).squeeze(1)
+#         if cmd_cfg.heading_command and commands_buf.shape[1] >= 4: commands_buf[env_ids, 3] = torch_rand_float(cmd_cfg.ranges.heading[0], cmd_cfg.ranges.heading[1], (len(env_ids), 1), device=self.device).squeeze(1)
+#         elif commands_buf.shape[1] >= 3: commands_buf[env_ids, 2] = torch_rand_float(-current_ang_vel_range, current_ang_vel_range, (len(env_ids), 1), device=self.device).squeeze(1)
+#         commands_buf[env_ids, :2] *= (torch.norm(commands_buf[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
+#         if hasattr(self, 'successful_command_tracking_streak'): self.successful_command_tracking_streak[env_ids] = 0
 
 
-    # --- Stage 1 Specific Success Criteria ---
-    # (Keep implementation as before)
-    def compute_success_criteria(self):
-        lin_vel_threshold = 0.3; ang_vel_threshold = 0.2; min_track_steps = self.min_tracking_steps_for_success
-        if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'):
-             sub_cfg = self.cfg.sub_stage_params.get(self.current_sub_stage, {})
-             lin_vel_threshold = sub_cfg.get('success_lin_tol', lin_vel_threshold)
-             ang_vel_threshold = sub_cfg.get('success_ang_tol', ang_vel_threshold)
-             min_track_steps = sub_cfg.get('min_tracking_steps_for_success', min_track_steps)
-        lin_vel_close_enough = torch.norm(self.commands[:, :2] - self.base_lin_vel[:, :2], dim=1) < lin_vel_threshold
-        if self.cfg.commands.heading_command: target_ang_vel = self.commands[:, 2]
-        else: target_ang_vel = self.commands[:, 2]
-        ang_vel_close_enough = torch.abs(target_ang_vel - self.base_ang_vel[:, 2]) < ang_vel_threshold
-        current_step_success = lin_vel_close_enough & ang_vel_close_enough
-        self.successful_command_tracking_streak = (self.successful_command_tracking_streak + 1) * current_step_success
-        episode_success_flags = self.successful_command_tracking_streak >= min_track_steps
-        return episode_success_flags
+#     # --- compute_observations ---
+#     # (Keep implementation as before)
+#     def compute_observations(self):
+#         super().compute_observations()
+#         # Optional final checks
+#         if self.obs_buf.shape[1] != self.num_observations: print(f"❌ ERROR obs shape mismatch: {self.obs_buf.shape[1]} vs {self.num_observations}")
+#         if self.privileged_obs_buf is not None and self.privileged_obs_buf.shape[1] != self.num_privileged_obs: print(f"❌ ERROR priv_obs shape mismatch: {self.privileged_obs_buf.shape[1]} vs {self.num_privileged_obs}")
+
+#     # --- _compute_torques ---
+#     # (Keep implementation as before)
+#     def _compute_torques(self, actions):
+#         if actions.shape[1] != self.num_actions: print(f"❌ ERROR _compute_torques: actions shape {actions.shape} != num_actions {self.num_actions}"); return torch.zeros(self.num_envs, self.num_dof, device=self.device)
+#         torques_full = torch.zeros(self.num_envs, self.num_dof, device=self.device)
+#         if self.is_nested_curriculum and self.active_joint_indices is not None:
+#             if len(self.active_joint_indices) != self.num_actions: print(f"❌ ERROR _compute_torques: index/action mismatch"); return torques_full
+#             active_actions_scaled = actions * self.cfg.control.action_scale; control_type = self.cfg.control.control_type
+#             active_dof_pos = self.dof_pos[:, self.active_joint_indices]; active_dof_vel = self.dof_vel[:, self.active_joint_indices]
+#             active_default_pos = self.default_dof_pos[:, self.active_joint_indices]; active_p_gains = self.p_gains[self.active_joint_indices]
+#             active_d_gains = self.d_gains[self.active_joint_indices]; active_torque_limits = self.torque_limits[self.active_joint_indices]
+#             if control_type == "P": active_torques = active_p_gains * (active_actions_scaled + active_default_pos - active_dof_pos) - active_d_gains * active_dof_vel
+#             elif control_type == "T": active_torques = active_actions_scaled
+#             else: raise NameError(f"Unknown controller type: {control_type}")
+#             active_torques = torch.clip(active_torques, -active_torque_limits, active_torque_limits)
+#             torques_full[:, self.active_joint_indices] = active_torques
+#             is_active_mask = torch.zeros(self.num_dof, dtype=torch.bool, device=self.device); is_active_mask[self.active_joint_indices] = True
+#             locked_indices = torch.nonzero(~is_active_mask).squeeze(-1)
+#             if len(locked_indices) > 0:
+#                  locked_dof_pos = self.dof_pos[:, locked_indices]; locked_dof_vel = self.dof_vel[:, locked_indices]
+#                  locked_target_pos = self.default_dof_pos[:, locked_indices]; locked_torque_limits = self.torque_limits[locked_indices]
+#                  locked_torques = self.locked_stiffness * (locked_target_pos - locked_dof_pos) - self.locked_damping * locked_dof_vel
+#                  locked_torques = torch.clip(locked_torques, -locked_torque_limits, locked_torque_limits)
+#                  torques_full[:, locked_indices] = locked_torques
+#         else:
+#             if self.num_actions != self.num_dof: print(f"❌ ERROR non-nested torque: num_actions {self.num_actions} != num_dof {self.num_dof}"); return torques_full
+#             torques_full = super()._compute_torques(actions)
+#         return torques_full
+
+#     # --- Stage 1 Specific Reward Overrides ---
+#     # (Keep implementation as before)
+#     def _reward_tracking_lin_vel(self):
+#         lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1); sigma = 0.15
+#         if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'): sub_cfg = self.cfg.sub_stage_params.get(self.current_sub_stage, {}); sigma = sub_cfg.get('tracking_sigma', sigma)
+#         return torch.exp(-lin_vel_error / sigma)
+
+#     def _reward_tracking_ang_vel(self):
+#         if self.cfg.commands.heading_command: target_ang_vel = self.commands[:, 2]
+#         else: target_ang_vel = self.commands[:, 2]
+#         ang_vel_error = torch.square(target_ang_vel - self.base_ang_vel[:, 2]); sigma = 0.15
+#         if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'): sub_cfg = self.cfg.sub_stage_params.get(self.current_sub_stage, {}); sigma = sub_cfg.get('tracking_sigma', sigma)
+#         return torch.exp(-ang_vel_error / sigma)
 
 
-    # --- post_physics_step ---
-    # (Keep implementation as before)
-    def post_physics_step(self):
-        super().post_physics_step()
-        success_flags = self.compute_success_criteria()
-        self.extras["success_flags"] = success_flags.clone()
-        if success_flags.any(): self.successful_command_tracking_streak[success_flags] = 0
+#     # --- Stage 1 Specific Success Criteria ---
+#     # (Keep implementation as before)
+#     def compute_success_criteria(self):
+#         lin_vel_threshold = 0.3; ang_vel_threshold = 0.2; min_track_steps = self.min_tracking_steps_for_success
+#         if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'):
+#              sub_cfg = self.cfg.sub_stage_params.get(self.current_sub_stage, {})
+#              lin_vel_threshold = sub_cfg.get('success_lin_tol', lin_vel_threshold)
+#              ang_vel_threshold = sub_cfg.get('success_ang_tol', ang_vel_threshold)
+#              min_track_steps = sub_cfg.get('min_tracking_steps_for_success', min_track_steps)
+#         lin_vel_close_enough = torch.norm(self.commands[:, :2] - self.base_lin_vel[:, :2], dim=1) < lin_vel_threshold
+#         if self.cfg.commands.heading_command: target_ang_vel = self.commands[:, 2]
+#         else: target_ang_vel = self.commands[:, 2]
+#         ang_vel_close_enough = torch.abs(target_ang_vel - self.base_ang_vel[:, 2]) < ang_vel_threshold
+#         current_step_success = lin_vel_close_enough & ang_vel_close_enough
+#         self.successful_command_tracking_streak = (self.successful_command_tracking_streak + 1) * current_step_success
+#         episode_success_flags = self.successful_command_tracking_streak >= min_track_steps
+#         return episode_success_flags
 
-    # --- reset_idx ---
-    # (Keep implementation as before)
-    def reset_idx(self, env_ids):
-         if len(env_ids) == 0: return
-         super().reset_idx(env_ids)
-         if hasattr(self, 'successful_command_tracking_streak'): self.successful_command_tracking_streak[env_ids] = 0
 
-    # --- Add helper for stage transition internal update (optional but good practice) ---
-    def update_sub_stage_parameters(self, new_sub_stage):
-        """ Updates internal parameters when the sub-stage changes without full env recreation.
-            Called by train_curriculum.py when only sub-stage advances but dimensions don't change.
-        """
-        print(f"--- G1BasicLocomotion: Updating internal state for sub-stage 1.{new_sub_stage} ---")
-        self.current_sub_stage = new_sub_stage
+#     # --- post_physics_step ---
+#     # (Keep implementation as before)
+#     def post_physics_step(self):
+#         super().post_physics_step()
+#         success_flags = self.compute_success_criteria()
+#         self.extras["success_flags"] = success_flags.clone()
+#         if success_flags.any(): self.successful_command_tracking_streak[success_flags] = 0
 
-        # Re-read parameters that might change (like velocity ranges, tolerances)
-        if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'):
-             sub_stage_cfg_dict = self.cfg.sub_stage_params.get(self.current_sub_stage)
-             if sub_stage_cfg_dict:
-                  sub_stage_cfg = DotDict(sub_stage_cfg_dict)
-                  self.base_lin_vel_range = sub_stage_cfg.get('base_lin_vel_range', self.cfg.commands.ranges.lin_vel_x[1])
-                  self.base_ang_vel_range = sub_stage_cfg.get('base_ang_vel_range', self.cfg.commands.ranges.ang_vel_yaw[1])
-                  print(f"  Updated velocity ranges: Lin={self.base_lin_vel_range}, Ang={self.base_ang_vel_range}")
-                  # Update success criteria steps if needed (though compute_success_criteria already reads dynamically)
-                  # self.min_tracking_steps_for_success = sub_stage_cfg.get('min_tracking_steps_for_success', self.min_tracking_steps_for_success)
+#     # --- reset_idx ---
+#     # (Keep implementation as before)
+#     def reset_idx(self, env_ids):
+#          if len(env_ids) == 0: return
+#          super().reset_idx(env_ids)
+#          if hasattr(self, 'successful_command_tracking_streak'): self.successful_command_tracking_streak[env_ids] = 0
 
-             else: print(f"  Warning: Could not find config for sub-stage {new_sub_stage} during update.")
-        # No need to recompute active joints or change PD gains if dimensions didn't change
+#     # --- Add helper for stage transition internal update (optional but good practice) ---
+#     def update_sub_stage_parameters(self, new_sub_stage):
+#         """ Updates internal parameters when the sub-stage changes without full env recreation.
+#             Called by train_curriculum.py when only sub-stage advances but dimensions don't change.
+#         """
+#         print(f"--- G1BasicLocomotion: Updating internal state for sub-stage 1.{new_sub_stage} ---")
+#         self.current_sub_stage = new_sub_stage
+
+#         # Re-read parameters that might change (like velocity ranges, tolerances)
+#         if self.is_nested_curriculum and hasattr(self.cfg, 'sub_stage_params'):
+#              sub_stage_cfg_dict = self.cfg.sub_stage_params.get(self.current_sub_stage)
+#              if sub_stage_cfg_dict:
+#                   sub_stage_cfg = DotDict(sub_stage_cfg_dict)
+#                   self.base_lin_vel_range = sub_stage_cfg.get('base_lin_vel_range', self.cfg.commands.ranges.lin_vel_x[1])
+#                   self.base_ang_vel_range = sub_stage_cfg.get('base_ang_vel_range', self.cfg.commands.ranges.ang_vel_yaw[1])
+#                   print(f"  Updated velocity ranges: Lin={self.base_lin_vel_range}, Ang={self.base_ang_vel_range}")
+#                   # Update success criteria steps if needed (though compute_success_criteria already reads dynamically)
+#                   # self.min_tracking_steps_for_success = sub_stage_cfg.get('min_tracking_steps_for_success', self.min_tracking_steps_for_success)
+
+#              else: print(f"  Warning: Could not find config for sub-stage {new_sub_stage} during update.")
+#         # No need to recompute active joints or change PD gains if dimensions didn't change

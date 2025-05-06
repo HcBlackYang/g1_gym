@@ -87,7 +87,7 @@ class Stage2KitchenNavConfig(LeggedRobotCfg):
 
         # --- 资产配置 ---
         # 机器人 URDF
-        self.asset.file = '/root/autodl-tmp/g1/g1_gym/resources/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf'
+        self.asset.file = '/home/blake/g1_gym/resources/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf'
         self.asset.name = "g1"
         self.asset.foot_name = "ankle_roll"
         # 惩罚接触部位可以增加手臂等
